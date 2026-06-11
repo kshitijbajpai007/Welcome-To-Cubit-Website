@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cubit — Master the Cube</title>
+<meta name="description" content="Cubit is an iOS app for Rubik's Cube enthusiasts — featuring a precision timer, Solve DNA breakdowns, an on-device AI coach, and interactive tutorials for Beginner's Method and CFOP.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
+
+<style>
+  /* ══════════════════════════════════════════
+     THEME TOKENS
+  ══════════════════════════════════════════ */
+  :root {
+    /* shared / brand */
+    --indigo: #6366f1;
+    --indigo-bright: #818cf8;
+    --indigo-glow: rgba(99,102,241,0.15);
+    --indigo-glow2: rgba(99,102,241,0.08);
+    --orange: #f97316;
+    --green: #22c55e;
+    --red: #ef4444;
+    --cyan: #22d3ee;
+
+    /* cube sticker colors — fixed, never change with theme */
+    --r-white:  #f0f0f0;
+    --r-orange: #ff6600;
+    --r-blue:   #0055bb;
+    --r-green:  #009922;
+    --r-yellow: #ffdd00;
+    --r-red:    #cc1111;
+  }
+
+  /* ── DARK THEME (default) ── */
+  [data-theme="dark"] {
+    --bg: #080a0f;
+    --surface: #0e1118;
+    --surface2: #141820;
+    --border: rgba(255,255,255,0.06);
+    --border-bright: rgba(255,255,255,0.14);
+    --text: #f0f0f2;
+    --text-inv: #080a0f;
+    --muted: #6b7180;
+    --subtle: #3a3f4d;
+    --nav-scrolled-bg: rgba(8,10,15,0.88);
+    --grid-line: rgba(255,255,255,0.025);
+    --appstore-btn-bg: #f0f0f2;
+    --appstore-btn-text: #080a0f;
+    --highlight-stripe-bg: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(34,211,238,0.04) 100%);
+    --highlight-stripe-border: rgba(99,102,241,0.2);
+    --methods-section-bg: #0e1118;
+    --toggle-bg: rgba(255,255,255,0.08);
+    --toggle-border: rgba(255,255,255,0.14);
+    --toggle-icon-color: #f0f0f2;
+    --scrollbar-track: #080a0f;
+    --privacy-bg: #0a0c12;
+    --privacy-surface: #0e1118;
+    --privacy-border: rgba(255,255,255,0.07);
+  }
+
+  /* ── LIGHT THEME ── */
+  [data-theme="light"] {
+    --bg: #f7f8fc;
+    --surface: #ffffff;
+    --surface2: #eef0f6;
+    --border: rgba(0,0,0,0.07);
+    --border-bright: rgba(0,0,0,0.13);
+    --text: #111318;
+    --text-inv: #ffffff;
+    --muted: #717888;
+    --subtle: #adb3c0;
+    --nav-scrolled-bg: rgba(247,248,252,0.92);
+    --grid-line: rgba(0,0,0,0.04);
+    --appstore-btn-bg: #111318;
+    --appstore-btn-text: #ffffff;
+    --highlight-stripe-bg: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(34,211,238,0.03) 100%);
+    --highlight-stripe-border: rgba(99,102,241,0.18);
+    --methods-section-bg: #eef0f6;
+    --toggle-bg: rgba(0,0,0,0.06);
+    --toggle-border: rgba(0,0,0,0.12);
+    --toggle-icon-color: #111318;
+    --scrollbar-track: #f7f8fc;
+    --indigo-glow2: rgba(99,102,241,0.06);
+    --privacy-bg: #eef0f6;
+    --privacy-surface: #ffffff;
+    --privacy-border: rgba(0,0,0,0.08);
+  }
+
+  /* ══════════════════════════════════════════
+     RESET & BASE
+  ══════════════════════════════════════════ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+    transition: background 0.35s ease, color 0.35s ease;
+  }
+
+  /* Noise grain */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 9999;
+    pointer-events: none; opacity: 0.022;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat; background-size: 200px 200px;
+  }
+
+  ::-webkit-scrollbar { width: 0; display: none; }
+  * { scrollbar-width: none; -ms-overflow-style: none; }
+
+  /* ══════════════════════════════════════════
+     NAV
+  ══════════════════════════════════════════ */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 20px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid transparent;
+    transition: all 0.4s ease;
+  }
+  nav.scrolled {
+    background: var(--nav-scrolled-bg);
+    backdrop-filter: blur(20px);
+    border-bottom-color: var(--border);
+  }
+
+  .nav-logo {
+    font-size: 22px; font-weight: 800; letter-spacing: -0.02em;
+    color: var(--text);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .nav-logo-cube {
+    width: 28px; height: 28px;
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 2px;
+    background: #000; border-radius: 3px; padding: 2px;
+  }
+  .nav-logo-cube span { border-radius: 1px; display: block; }
+
+  .nav-right { display: flex; align-items: center; gap: 20px; }
+
+  .nav-links {
+    display: flex; align-items: center; gap: 36px; list-style: none;
+  }
+  .nav-links a {
+    text-decoration: none; color: var(--muted);
+    font-size: 13px; font-weight: 500; letter-spacing: 0.06em;
+    text-transform: uppercase; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-cta {
+    background: var(--indigo); color: white !important;
+    padding: 9px 20px; border-radius: 8px;
+    font-size: 13px !important; font-weight: 600 !important;
+    letter-spacing: 0.04em !important; transition: background 0.2s, transform 0.15s !important;
+    text-transform: none !important;
+  }
+  .nav-cta:hover { background: var(--indigo-bright) !important; transform: translateY(-1px); }
+
+  /* ── THEME TOGGLE ── */
+  .theme-toggle {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--toggle-bg); border: 1px solid var(--toggle-border);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+    color: var(--toggle-icon-color);
+  }
+  .theme-toggle:hover { border-color: var(--indigo); color: var(--indigo); }
+  .theme-toggle svg { width: 18px; height: 18px; transition: transform 0.4s; }
+  .theme-toggle:hover svg { transform: rotate(20deg); }
+  .icon-sun, .icon-moon { display: none; }
+  [data-theme="dark"]  .icon-sun  { display: block; }
+  [data-theme="light"] .icon-moon { display: block; }
+
+  /* ══════════════════════════════════════════
+     HERO
+  ══════════════════════════════════════════ */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; padding: 120px 24px 80px;
+    position: relative; overflow: hidden;
+  }
+
+  .glow-blob { position: absolute; border-radius: 50%; filter: blur(100px); pointer-events: none; }
+  .glow-1 {
+    width: 600px; height: 600px; top: -100px; left: 50%; transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%);
+    animation: pulse-blob1 8s ease-in-out infinite;
+  }
+  .glow-2 {
+    width: 400px; height: 400px; bottom: 100px; left: 10%;
+    background: radial-gradient(circle, rgba(249,115,22,0.1) 0%, transparent 70%);
+    animation: pulse-blob2 10s ease-in-out infinite 2s;
+  }
+  .glow-3 {
+    width: 300px; height: 300px; top: 30%; right: 8%;
+    background: radial-gradient(circle, rgba(34,211,238,0.08) 0%, transparent 70%);
+    animation: pulse-blob2 12s ease-in-out infinite 4s;
+  }
+  @keyframes pulse-blob1 {
+    0%,100% { transform: translateX(-50%) scale(1); opacity:1; }
+    50%      { transform: translateX(-50%) scale(1.15); opacity:0.7; }
+  }
+  @keyframes pulse-blob2 {
+    0%,100% { transform: scale(1); opacity:1; }
+    50%     { transform: scale(1.2); opacity:0.6; }
+  }
+
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+  }
+
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--indigo-bright); margin-bottom: 28px;
+    display: flex; align-items: center; gap: 12px;
+    animation: fadeUp 0.8s ease both;
+  }
+  .hero-eyebrow::before, .hero-eyebrow::after {
+    content: ''; width: 40px; height: 1px; background: var(--indigo); opacity: 0.5;
+  }
+
+  .hero-title {
+    font-size: clamp(64px, 10vw, 130px); font-weight: 800;
+    line-height: 0.9; letter-spacing: -0.04em; margin-bottom: 24px;
+    animation: fadeUp 0.8s ease 0.1s both;
+  }
+  .hero-title .line1 { display: block; }
+  .hero-title .line2 {
+    display: block; font-family: 'Fraunces', serif; font-style: italic; font-weight: 300;
+    background: linear-gradient(135deg, var(--indigo-bright) 0%, var(--cyan) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  .hero-subtitle {
+    font-size: 18px; color: var(--muted); max-width: 480px; font-weight: 400;
+    line-height: 1.7; margin-bottom: 48px; animation: fadeUp 0.8s ease 0.2s both;
+  }
+
+  .hero-actions {
+    display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap;
+    animation: fadeUp 0.8s ease 0.3s both;
+  }
+
+  .btn-primary {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--indigo); color: white; text-decoration: none;
+    padding: 16px 32px; border-radius: 12px; font-size: 15px; font-weight: 700;
+    letter-spacing: -0.01em; transition: all 0.2s;
+    box-shadow: 0 0 40px rgba(99,102,241,0.3); position: relative; overflow: hidden;
+  }
+  .btn-primary::before {
+    content: ''; position: absolute; top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.5s;
+  }
+  .btn-primary:hover::before { left: 100%; }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 50px rgba(99,102,241,0.4); background: var(--indigo-bright); }
+
+  .btn-ghost {
+    display: flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none;
+    padding: 16px 24px; border-radius: 12px; font-size: 15px; font-weight: 500;
+    border: 1px solid var(--border-bright); transition: all 0.2s;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--indigo); background: var(--indigo-glow2); }
+
+  .apple-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border-bright);
+    padding: 8px 16px; border-radius: 100px;
+    font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted);
+    margin-bottom: 48px; animation: fadeUp 0.8s ease 0.35s both;
+  }
+  .apple-badge svg { width: 14px; height: 14px; fill: var(--text); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ══════════════════════════════════════════
+     3D RUBIK'S CUBE
+     ─ Valid color state: exactly 9 of each color
+     ─ Face gaps = solid black background (#000)
+     ─ backface-visibility: hidden stops bleed-through
+     ─ Faces slightly oversized w/ clip so edge seams
+       are never transparent
+  ══════════════════════════════════════════ */
+  .hero-cube-wrapper {
+    margin-top: 72px;
+    perspective: 900px;
+    animation: fadeUp 0.8s ease 0.5s both;
+  }
+
+  .rubiks-cube {
+    width: 162px; height: 162px;
+    position: relative; transform-style: preserve-3d;
+    animation: spin-cube 18s linear infinite;
+  }
+  @keyframes spin-cube {
+    from { transform: rotateX(-28deg) rotateY(35deg); }
+    to   { transform: rotateX(-28deg) rotateY(395deg); }
+  }
+
+  /* ── Cube faces ── */
+  .cube-face {
+    position: absolute;
+    width: 162px; height: 162px;
+    /* Pure black = the gap colour between stickers */
+    background: #000;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows:    repeat(3, 1fr);
+    gap: 4px;
+    padding: 4px;
+    /* Hide the back of each face so you can't see through edges */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* Extra inner frame so no transparent seam appears at cube edges */
+  .cube-face::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    background: #000;
+    z-index: -1;
+  }
+
+  .cube-face-front  { transform: translateZ(81px); }
+  .cube-face-back   { transform: rotateY(180deg) translateZ(81px); }
+  .cube-face-left   { transform: rotateY(-90deg) translateZ(81px); }
+  .cube-face-right  { transform: rotateY(90deg)  translateZ(81px); }
+  .cube-face-top    { transform: rotateX(90deg)  translateZ(81px); }
+  .cube-face-bottom { transform: rotateX(-90deg) translateZ(81px); }
+
+  /* Sticker tiles */
+  .cubie {
+    border-radius: 3px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -1px 0 rgba(0,0,0,0.35);
+  }
+
+  /* Sticker colour classes */
+  .cubie.w { background: var(--r-white); }
+  .cubie.o { background: var(--r-orange); }
+  .cubie.b { background: var(--r-blue); }
+  .cubie.g { background: var(--r-green); }
+  .cubie.y { background: var(--r-yellow); }
+  .cubie.r { background: var(--r-red); }
+
+  /* ══════════════════════════════════════════
+     STATS BAR
+  ══════════════════════════════════════════ */
+  .stats-bar {
+    background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    padding: 32px 0; overflow: hidden;
+  }
+  .stats-bar-inner {
+    max-width: 900px; margin: 0 auto; padding: 0 40px;
+    display: flex; justify-content: space-around; align-items: center; gap: 24px; flex-wrap: wrap;
+  }
+  .stat-item { text-align: center; }
+  .stat-number {
+    font-size: 38px; font-weight: 800; letter-spacing: -0.04em; color: var(--text); line-height: 1; margin-bottom: 4px;
+  }
+  .stat-number.accent { color: var(--indigo-bright); }
+  .stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); font-weight: 500; }
+  .stat-divider { width: 1px; height: 40px; background: var(--border-bright); }
+
+  /* ══════════════════════════════════════════
+     SECTIONS
+  ══════════════════════════════════════════ */
+  section { padding: 120px 24px; }
+  .section-inner { max-width: 1100px; margin: 0 auto; }
+
+  .section-eyebrow {
+    font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--indigo-bright); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-eyebrow::after { content: ''; height: 1px; width: 40px; background: currentColor; opacity: 0.4; }
+
+  .section-title {
+    font-size: clamp(36px, 5vw, 58px); font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 20px;
+  }
+  .section-title em { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; color: var(--indigo-bright); }
+  .section-desc { font-size: 17px; color: var(--muted); max-width: 520px; line-height: 1.7; }
+
+  /* ══════════════════════════════════════════
+     FEATURES GRID
+  ══════════════════════════════════════════ */
+  .features-grid {
+    display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-top: 64px;
+  }
+  .feature-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 36px;
+    position: relative; overflow: hidden; transition: border-color 0.3s, transform 0.3s, background 0.35s;
+  }
+  .feature-card:hover { border-color: var(--border-bright); transform: translateY(-4px); }
+  .feature-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at top left, var(--indigo-glow2), transparent 60%);
+    pointer-events: none;
+  }
+  .feature-card.span-7 { grid-column: span 7; }
+  .feature-card.span-5 { grid-column: span 5; }
+  .feature-card.span-4 { grid-column: span 4; }
+  .feature-card.span-8 { grid-column: span 8; }
+
+  .feature-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 24px; font-size: 22px; flex-shrink: 0;
+  }
+  .feature-icon.indigo { background: rgba(99,102,241,0.15); }
+  .feature-icon.orange { background: rgba(249,115,22,0.15); }
+  .feature-icon.green  { background: rgba(34,197,94,0.15); }
+  .feature-icon.cyan   { background: rgba(34,211,238,0.15); }
+
+  .feature-tag { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .feature-name { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; line-height: 1.2; }
+  .feature-desc { font-size: 15px; color: var(--muted); line-height: 1.65; }
+
+  /* DNA visualization */
+  .dna-visual {
+    margin-top: 28px; padding: 20px; background: var(--bg);
+    border-radius: 12px; border: 1px solid var(--border); transition: background 0.35s;
+  }
+  .dna-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+  .dna-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .dna-stage-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); width: 36px; text-align: right; flex-shrink: 0; }
+  .dna-bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 100px; overflow: hidden; }
+  .dna-bar-fill { height: 100%; border-radius: 100px; animation: growBar 1.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+  .dna-bar-fill.cross { background: rgba(200,200,210,0.5); }
+  .dna-bar-fill.f2l   { background: rgba(200,200,210,0.4); }
+  .dna-bar-fill.oll   { background: var(--indigo); }
+  .dna-bar-fill.pll   { background: var(--indigo-bright); }
+  .dna-time { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); width: 40px; flex-shrink: 0; }
+  @keyframes growBar { from { width: 0; } }
+
+  /* Timer display */
+  .timer-display { margin-top: 28px; text-align: center; }
+  .timer-number { font-family: 'DM Mono', monospace; font-size: 52px; font-weight: 300; color: var(--text); letter-spacing: -0.02em; line-height: 1; }
+  .timer-ms { font-size: 28px; color: var(--indigo-bright); }
+  .timer-scramble { margin-top: 16px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.05em; line-height: 1.8; transition: opacity 0.4s; }
+
+  /* Algorithm chips */
+  .algo-chips { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .algo-chip {
+    font-family: 'DM Mono', monospace; font-size: 11px; padding: 6px 12px; border-radius: 100px;
+    border: 1px solid var(--border-bright); color: var(--muted); letter-spacing: 0.05em; transition: all 0.2s;
+  }
+  .algo-chip.active { background: var(--indigo-glow); border-color: var(--indigo); color: var(--indigo-bright); }
+
+  /* Coach card */
+  .coach-bubble { margin-top: 24px; background: var(--bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; transition: background 0.35s; }
+  .coach-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .coach-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: blink 2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .coach-name { font-size: 12px; font-weight: 600; color: var(--text); letter-spacing: 0.03em; }
+  .coach-badge { font-family: 'DM Mono', monospace; font-size: 9px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: var(--green); padding: 2px 8px; border-radius: 100px; letter-spacing: 0.1em; text-transform: uppercase; margin-left: auto; }
+  .coach-text { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .coach-text strong { color: var(--text); font-weight: 600; }
+
+  /* Stats mini cards */
+  .mini-stats { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .mini-stat {
+    flex: 1; min-width: 100px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; transition: background 0.35s;
+  }
+  .mini-stat-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .mini-stat-value { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 300; letter-spacing: -0.02em; }
+  .mini-stat-value.accent { color: var(--indigo-bright); }
+
+  /* ══════════════════════════════════════════
+     HIGHLIGHT STRIPE
+  ══════════════════════════════════════════ */
+  .highlight-stripe {
+    padding: 80px 24px;
+    background: var(--highlight-stripe-bg);
+    border-top: 1px solid var(--highlight-stripe-border);
+    border-bottom: 1px solid var(--highlight-stripe-border);
+  }
+  .highlight-inner { max-width: 800px; margin: 0 auto; text-align: center; }
+  .highlight-quote { font-family: 'Fraunces', serif; font-size: clamp(28px,4vw,44px); font-weight: 300; font-style: italic; color: var(--text); line-height: 1.3; margin-bottom: 24px; }
+  .highlight-quote em { font-style: normal; color: var(--indigo-bright); }
+  .highlight-attr { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+
+  /* ══════════════════════════════════════════
+     METHODS SECTION
+  ══════════════════════════════════════════ */
+  .methods-section { background: var(--methods-section-bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); transition: background 0.35s; }
+  .methods-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 64px; }
+  .method-card { background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 40px; position: relative; overflow: hidden; transition: border-color 0.3s, transform 0.3s, background 0.35s; }
+  .method-card:hover { border-color: var(--border-bright); transform: translateY(-4px); }
+  .method-card.featured { border-color: rgba(99,102,241,0.3); background: linear-gradient(135deg, rgba(99,102,241,0.05) 0%, var(--bg) 60%); }
+  .method-difficulty { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; padding: 4px 12px; border-radius: 100px; margin-bottom: 20px; display: inline-block; }
+  .diff-easy { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .diff-hard { background: rgba(249,115,22,0.1); color: var(--orange); border: 1px solid rgba(249,115,22,0.2); }
+  .method-name { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+  .method-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; font-family: 'DM Mono', monospace; letter-spacing: 0.04em; }
+  .method-steps { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .method-step { display: flex; align-items: center; gap: 12px; }
+  .step-num { width: 24px; height: 24px; border-radius: 6px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); flex-shrink: 0; border: 1px solid var(--border); transition: background 0.35s; }
+  .step-num.active { background: var(--indigo); color: white; border-color: var(--indigo); }
+  .step-text { font-size: 14px; color: var(--muted); }
+  .step-text strong { color: var(--text); font-weight: 600; }
+  .method-meta { display: flex; gap: 20px; flex-wrap: wrap; }
+  .meta-item { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .meta-item strong { color: var(--indigo-bright); font-weight: 500; }
+  .cfop-note { margin-top: 24px; padding: 12px 16px; background: var(--indigo-glow2); border: 1px solid rgba(99,102,241,0.2); border-radius: 10px; }
+  .cfop-note-title { font-size: 12px; color: var(--indigo-bright); font-weight: 600; margin-bottom: 4px; }
+  .cfop-note-sub { font-size: 12px; color: var(--muted); }
+
+  /* ══════════════════════════════════════════
+     WORKFLOW
+  ══════════════════════════════════════════ */
+  .workflow-steps { margin-top: 64px; display: grid; grid-template-columns: repeat(4,1fr); gap: 0; position: relative; }
+  .workflow-steps::before {
+    content: ''; position: absolute; top: 32px; left: 12.5%; right: 12.5%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-bright), var(--indigo), var(--border-bright), transparent);
+    pointer-events: none;
+  }
+  .workflow-step { text-align: center; padding: 0 20px; position: relative; }
+  .workflow-num {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: var(--surface); border: 1px solid var(--border-bright);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; color: var(--text);
+    margin: 0 auto 24px; position: relative; z-index: 1; transition: all 0.3s;
+  }
+  .workflow-step:hover .workflow-num { background: var(--indigo-glow); border-color: var(--indigo); color: var(--indigo-bright); }
+  .workflow-step-name { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .workflow-step-desc { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+  /* ══════════════════════════════════════════
+     CTA
+  ══════════════════════════════════════════ */
+  .cta-section { text-align: center; padding: 140px 24px; position: relative; overflow: hidden; }
+  .cta-section::before {
+    content: ''; position: absolute; width: 600px; height: 600px; border-radius: 50%;
+    top: 50%; left: 50%; transform: translate(-50%,-50%);
+    background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .cta-title { font-size: clamp(44px,7vw,90px); font-weight: 800; letter-spacing: -0.04em; line-height: 0.95; margin-bottom: 24px; position: relative; }
+  .cta-title span { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; color: var(--indigo-bright); }
+  .cta-sub { font-size: 18px; color: var(--muted); max-width: 400px; margin: 0 auto 48px; line-height: 1.6; }
+
+  .appstore-btn {
+    display: inline-flex; align-items: center; gap: 14px;
+    background: var(--appstore-btn-bg); color: var(--appstore-btn-text); text-decoration: none;
+    padding: 16px 32px; border-radius: 16px; font-size: 15px; font-weight: 700;
+    transition: all 0.25s; box-shadow: 0 0 60px rgba(99,102,241,0.15);
+  }
+  .appstore-btn svg { fill: var(--appstore-btn-text); }
+  .appstore-btn:hover { transform: translateY(-3px); box-shadow: 0 16px 60px rgba(99,102,241,0.25); }
+  .appstore-btn-text { display: flex; flex-direction: column; align-items: flex-start; }
+  .appstore-btn-small { font-size: 11px; font-weight: 400; opacity: 0.6; }
+  .appstore-btn-large { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; line-height: 1; }
+  .cta-note { margin-top: 20px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--subtle); letter-spacing: 0.08em; }
+
+  /* ══════════════════════════════════════════
+     PRIVACY POLICY SECTION
+  ══════════════════════════════════════════ */
+  .privacy-section {
+    background: var(--privacy-bg);
+    border-top: 1px solid var(--border);
+    padding: 120px 24px;
+    transition: background 0.35s;
+  }
+  .privacy-inner { max-width: 800px; margin: 0 auto; }
+
+  .privacy-header { margin-bottom: 56px; }
+  .privacy-header .section-eyebrow { margin-bottom: 12px; }
+  .privacy-header .section-title { margin-bottom: 16px; }
+  .privacy-header .section-desc { font-size: 15px; }
+
+  .privacy-card {
+    background: var(--privacy-surface);
+    border: 1px solid var(--privacy-border);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 16px;
+    transition: background 0.35s, border-color 0.3s, transform 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .privacy-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(to bottom, var(--indigo), var(--cyan));
+    border-radius: 3px 0 0 3px;
+  }
+  .privacy-card:hover { border-color: var(--border-bright); transform: translateY(-2px); }
+
+  .privacy-card-header {
+    display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px;
+  }
+  .privacy-card-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--indigo-glow); border: 1px solid rgba(99,102,241,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .privacy-card-title {
+    font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
+    color: var(--text); line-height: 1.2; margin-bottom: 4px;
+  }
+  .privacy-card-sub {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+  }
+  .privacy-card-body {
+    font-size: 14px; color: var(--muted); line-height: 1.75;
+  }
+  .privacy-card-body p { margin-bottom: 10px; }
+  .privacy-card-body p:last-child { margin-bottom: 0; }
+  .privacy-card-body strong { color: var(--text); font-weight: 600; }
+  .privacy-card-body ul {
+    list-style: none; margin-top: 10px;
+  }
+  .privacy-card-body ul li {
+    padding: 6px 0; padding-left: 20px; position: relative;
+  }
+  .privacy-card-body ul li::before {
+    content: '→';
+    position: absolute; left: 0;
+    color: var(--indigo-bright); font-size: 12px;
+  }
+
+  .privacy-highlight {
+    background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(34,211,238,0.04) 100%);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 16px;
+    padding: 28px 36px;
+    margin-top: 32px;
+    text-align: center;
+  }
+  .privacy-highlight-icon { font-size: 32px; margin-bottom: 12px; }
+  .privacy-highlight-text {
+    font-family: 'Fraunces', serif; font-size: 22px; font-style: italic;
+    font-weight: 300; color: var(--text); line-height: 1.4; margin-bottom: 8px;
+  }
+  .privacy-highlight-sub {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+  }
+
+  .privacy-meta {
+    margin-top: 32px; padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  }
+  .privacy-meta-text {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 0.08em; color: var(--subtle);
+  }
+  .privacy-contact-link {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 0.08em; color: var(--indigo-bright);
+    text-decoration: none; border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .privacy-contact-link:hover { color: var(--cyan); border-color: var(--cyan); }
+
+  /* ══════════════════════════════════════════
+     FOOTER
+  ══════════════════════════════════════════ */
+  footer { border-top: 1px solid var(--border); padding: 48px 40px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+  .footer-logo { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: var(--muted); }
+  .footer-copy { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--subtle); letter-spacing: 0.05em; }
+  .footer-links { display: flex; gap: 28px; list-style: none; }
+  .footer-links a { text-decoration: none; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--subtle); transition: color 0.2s; }
+  .footer-links a:hover { color: var(--muted); }
+
+  /* ══════════════════════════════════════════
+     SCROLL REVEAL
+  ══════════════════════════════════════════ */
+  .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ══════════════════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════════════════ */
+  @media (max-width: 900px) {
+    nav { padding: 16px 20px; }
+    .nav-links { display: none; }
+    .features-grid { grid-template-columns: 1fr; }
+    .feature-card.span-7,.feature-card.span-5,.feature-card.span-4,.feature-card.span-8 { grid-column: span 1; }
+    .methods-layout { grid-template-columns: 1fr; }
+    .workflow-steps { grid-template-columns: 1fr 1fr; gap: 32px; }
+    .workflow-steps::before { display: none; }
+    section { padding: 80px 20px; }
+    .privacy-section { padding: 80px 20px; }
+    footer { flex-direction: column; text-align: center; }
+    .stats-bar-inner { gap: 32px; }
+    .stat-divider { display: none; }
+    .mini-stats { flex-wrap: wrap; }
+    .privacy-card { padding: 28px 24px; }
+    .privacy-meta { flex-direction: column; text-align: center; }
+  }
+  @media (max-width: 560px) {
+    .workflow-steps { grid-template-columns: 1fr; }
+    .hero-title { font-size: 54px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav id="nav">
+  <div class="nav-logo">
+    <div class="nav-logo-cube">
+      <span style="background:#cc1111"></span>
+      <span style="background:#f0f0f0"></span>
+      <span style="background:#009922"></span>
+      <span style="background:#0055bb"></span>
+      <span style="background:#6366f1"></span>
+      <span style="background:#ff6600"></span>
+      <span style="background:#ffdd00"></span>
+      <span style="background:#22d3ee"></span>
+      <span style="background:#cc1111"></span>
+    </div>
+    Cubit
+  </div>
+
+  <div class="nav-right">
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#methods">Methods</a></li>
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#privacy">Privacy</a></li>
+      <li><a href="#cta" class="nav-cta">Download</a></li>
+    </ul>
+
+    <!-- Theme toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode">
+      <!-- Sun icon (shown in dark mode → click to go light) -->
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <!-- Moon icon (shown in light mode → click to go dark) -->
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero">
+  <div class="glow-blob glow-1"></div>
+  <div class="glow-blob glow-2"></div>
+  <div class="glow-blob glow-3"></div>
+  <div class="hero-grid"></div>
+
+  <div class="hero-eyebrow">Rubik's Cube · iOS App</div>
+
+  <h1 class="hero-title">
+    <span class="line1">Your cube.</span>
+    <span class="line2">Mastered.</span>
+  </h1>
+
+  <p class="hero-subtitle">
+    Timer, trainer, and AI coach — everything you need to go from scrambled to solved, fast.
+  </p>
+
+  <div class="apple-badge">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+    Available on the App Store · iOS
+  </div>
+
+  <div class="hero-actions">
+    <a href="#cta" class="btn-primary">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+      Download Free
+    </a>
+    <a href="#features" class="btn-ghost">
+      Explore Features
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+
+  <!--
+    ══════════════════════════════════════════
+    RUBIK'S CUBE — VALID SOLVED STATE (scrambled look)
+    ─────────────────────────────────────────
+    Standard face centers (fixed):
+      Front=Red(r), Back=Orange(o), Right=Blue(b),
+      Left=Green(g), Top=White(w), Bottom=Yellow(y)
+
+    Sticker count verification — each color exactly 9:
+      r: F(3)+B(1)+L(1)+R(2)+T(1)+Bo(1) = 9 ✓
+      o: F(1)+B(3)+L(1)+R(1)+T(1)+Bo(2) = 9 ✓
+      b: F(1)+B(1)+L(1)+R(3)+T(2)+Bo(1) = 9 ✓
+      g: F(1)+B(1)+L(3)+R(1)+T(1)+Bo(2) = 9 ✓
+      w: F(1)+B(1)+L(2)+R(1)+T(3)+Bo(1) = 9 ✓
+      y: F(2)+B(2)+L(1)+R(1)+T(1)+Bo(2) = 9 ✓  (Total = 54)
+
+    Face background = solid #000  → black gaps between stickers
+    backface-visibility: hidden   → no bleed-through at seams
+    ══════════════════════════════════════════
+  -->
+  <div class="hero-cube-wrapper">
+    <div class="rubiks-cube" id="rubiksCube">
+
+      <!-- FRONT face — center: r (red) -->
+      <div class="cube-face cube-face-front">
+        <div class="cubie w"></div><div class="cubie r"></div><div class="cubie y"></div>
+        <div class="cubie g"></div><div class="cubie r"></div><div class="cubie b"></div>
+        <div class="cubie r"></div><div class="cubie y"></div><div class="cubie r"></div>
+      </div>
+
+      <!-- BACK face — center: o (orange) -->
+      <div class="cube-face cube-face-back">
+        <div class="cubie y"></div><div class="cubie o"></div><div class="cubie r"></div>
+        <div class="cubie b"></div><div class="cubie o"></div><div class="cubie w"></div>
+        <div class="cubie o"></div><div class="cubie g"></div><div class="cubie o"></div>
+      </div>
+
+      <!-- LEFT face — center: g (green) -->
+      <div class="cube-face cube-face-left">
+        <div class="cubie b"></div><div class="cubie o"></div><div class="cubie w"></div>
+        <div class="cubie y"></div><div class="cubie g"></div><div class="cubie w"></div>
+        <div class="cubie g"></div><div class="cubie g"></div><div class="cubie r"></div>
+      </div>
+
+      <!-- RIGHT face — center: b (blue) -->
+      <div class="cube-face cube-face-right">
+        <div class="cubie g"></div><div class="cubie y"></div><div class="cubie o"></div>
+        <div class="cubie r"></div><div class="cubie b"></div><div class="cubie w"></div>
+        <div class="cubie b"></div><div class="cubie b"></div><div class="cubie y"></div>
+      </div>
+
+      <!-- TOP face — center: w (white) -->
+      <div class="cube-face cube-face-top">
+        <div class="cubie r"></div><div class="cubie o"></div><div class="cubie b"></div>
+        <div class="cubie g"></div><div class="cubie w"></div><div class="cubie b"></div>
+        <div class="cubie w"></div><div class="cubie w"></div><div class="cubie o"></div>
+      </div>
+
+      <!-- BOTTOM face — center: y (yellow) -->
+      <div class="cube-face cube-face-bottom">
+        <div class="cubie o"></div><div class="cubie g"></div><div class="cubie w"></div>
+        <div class="cubie y"></div><div class="cubie y"></div><div class="cubie r"></div>
+        <div class="cubie y"></div><div class="cubie g"></div><div class="cubie b"></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ STATS BAR ═══════════ -->
+<div class="stats-bar">
+  <div class="stats-bar-inner">
+    <div class="stat-item">
+      <div class="stat-number accent">4</div>
+      <div class="stat-label">App Sections</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <div class="stat-number">78+</div>
+      <div class="stat-label">CFOP Algorithms</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <div class="stat-number accent">2</div>
+      <div class="stat-label">Solving Methods</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <div class="stat-number">∞</div>
+      <div class="stat-label">Scrambles</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <div class="stat-number accent">AI</div>
+      <div class="stat-label">On-Device Coach</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ FEATURES ═══════════ -->
+<section id="features">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-eyebrow">Features</div>
+      <h2 class="section-title">Built for <em>every</em><br>stage of your journey</h2>
+      <p class="section-desc">From first solve to sub-30 seconds — Cubit grows with you.</p>
+    </div>
+
+    <div class="features-grid">
+
+      <!-- Timer + DNA -->
+      <div class="feature-card span-7 reveal">
+        <div class="feature-icon indigo">⏱</div>
+        <div class="feature-tag">Timer · DNA Mode</div>
+        <div class="feature-name">Precision Timer<br>with Solve DNA</div>
+        <div class="feature-desc">Tap to start, tap to split. Cubit captures your Cross → F2L → OLL → PLL breakdown every single solve, painting a detailed picture of where time is won and lost.</div>
+        <div class="timer-display">
+          <div class="timer-number">12<span class="timer-ms">.843</span></div>
+          <div class="timer-scramble" id="scrambleDisplay">R U R' U' R' F R2 U' R' U' R U R' F'</div>
+        </div>
+        <div class="dna-visual">
+          <div class="dna-label">Solve DNA — Last solve breakdown</div>
+          <div class="dna-bar-row">
+            <div class="dna-stage-label">Cross</div>
+            <div class="dna-bar-track"><div class="dna-bar-fill cross" style="width:18%"></div></div>
+            <div class="dna-time">2.31s</div>
+          </div>
+          <div class="dna-bar-row">
+            <div class="dna-stage-label">F2L</div>
+            <div class="dna-bar-track"><div class="dna-bar-fill f2l" style="width:52%"></div></div>
+            <div class="dna-time">6.70s</div>
+          </div>
+          <div class="dna-bar-row">
+            <div class="dna-stage-label">OLL</div>
+            <div class="dna-bar-track"><div class="dna-bar-fill oll" style="width:19%"></div></div>
+            <div class="dna-time">2.44s</div>
+          </div>
+          <div class="dna-bar-row">
+            <div class="dna-stage-label">PLL</div>
+            <div class="dna-bar-track"><div class="dna-bar-fill pll" style="width:11%"></div></div>
+            <div class="dna-time">1.40s</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Coach -->
+      <div class="feature-card span-5 reveal" style="transition-delay:0.1s">
+        <div class="feature-icon green">🧠</div>
+        <div class="feature-tag">AI Coach · On-Device</div>
+        <div class="feature-name">Your personal<br>cube coach</div>
+        <div class="feature-desc">Powered by Apple Intelligence. Analyzes your DNA splits and gives targeted coaching that's private, instant, and completely offline.</div>
+        <div class="coach-bubble">
+          <div class="coach-header">
+            <div class="coach-dot"></div>
+            <div class="coach-name">Cubit Coach</div>
+            <div class="coach-badge">On-Device AI</div>
+          </div>
+          <div class="coach-text">
+            Your <strong>F2L is eating 52%</strong> of your solve time. Focus on lookahead — try to spot your next pair while inserting the current one. Your OLL and PLL are already solid!
+          </div>
+        </div>
+      </div>
+
+      <!-- Algorithm Trainer -->
+      <div class="feature-card span-4 reveal" style="transition-delay:0.15s">
+        <div class="feature-icon orange">🏋️</div>
+        <div class="feature-tag">Algorithm Trainer</div>
+        <div class="feature-name">Train every alg to muscle memory</div>
+        <div class="feature-desc">Drill OLL, PLL, and F2L cases with a live 3D cube and per-algorithm personal bests.</div>
+        <div class="algo-chips">
+          <div class="algo-chip active">T-Perm</div>
+          <div class="algo-chip">J-Perm</div>
+          <div class="algo-chip">U-Perm</div>
+          <div class="algo-chip">Sune</div>
+          <div class="algo-chip">Anti-Sune</div>
+          <div class="algo-chip">H-Perm</div>
+          <div class="algo-chip">F2L 34</div>
+          <div class="algo-chip">OLL 21</div>
+        </div>
+      </div>
+
+      <!-- Statistics -->
+      <div class="feature-card span-8 reveal" style="transition-delay:0.2s">
+        <div class="feature-icon cyan">📊</div>
+        <div class="feature-tag">Statistics</div>
+        <div class="feature-name">Deep stats that reveal your patterns</div>
+        <div class="feature-desc">Session history, ao5 / ao12 / ao100 averages, personal bests, stage-by-stage breakdowns and trend analysis — all stored locally and ready instantly.</div>
+        <div class="mini-stats">
+          <div class="mini-stat">
+            <div class="mini-stat-label">PB Single</div>
+            <div class="mini-stat-value accent">9.41</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-label">Avg of 12</div>
+            <div class="mini-stat-value">13.72</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-label">Sessions</div>
+            <div class="mini-stat-value">47</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-label">Total Solves</div>
+            <div class="mini-stat-value">1,203</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ HIGHLIGHT STRIPE ═══════════ -->
+<div class="highlight-stripe">
+  <div class="highlight-inner reveal">
+    <div class="highlight-quote">
+      "Your solve has a <em>fingerprint</em>. Cubit reads it — and tells you exactly where to get faster."
+    </div>
+    <div class="highlight-attr">— The idea behind Solve DNA</div>
+  </div>
+</div>
+
+<!-- ═══════════ METHODS ═══════════ -->
+<section id="methods" class="methods-section">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-eyebrow">Learn</div>
+      <h2 class="section-title">Two paths.<br><em>One destination.</em></h2>
+      <p class="section-desc">Pick your method and learn step-by-step with interactive 3D tutorials and algorithm cards.</p>
+    </div>
+
+    <div class="methods-layout">
+      <div class="method-card reveal">
+        <div class="method-difficulty diff-easy">Easy · Beginner</div>
+        <div class="method-name">Beginner's Method</div>
+        <div class="method-sub">Layer-by-layer · ~100 moves · 6–8 algorithms</div>
+        <ul class="method-steps">
+          <li class="method-step"><div class="step-num">1</div><div class="step-text"><strong>White Cross</strong> — 4 edge pieces, matching sides</div></li>
+          <li class="method-step"><div class="step-num">2</div><div class="step-text"><strong>White Corners</strong> — Complete the first layer</div></li>
+          <li class="method-step"><div class="step-num">3</div><div class="step-text"><strong>Middle Layer</strong> — Insert the 4 edge pieces</div></li>
+          <li class="method-step"><div class="step-num">4</div><div class="step-text"><strong>Yellow Cross</strong> — Orient the top edges</div></li>
+          <li class="method-step"><div class="step-num">5</div><div class="step-text"><strong>Yellow Edges</strong> — Cycle edge permutation</div></li>
+          <li class="method-step"><div class="step-num">6</div><div class="step-text"><strong>Yellow Corners</strong> — Position and orient to finish</div></li>
+        </ul>
+        <div class="method-meta">
+          <div class="meta-item">Algorithms: <strong>~6–8</strong></div>
+          <div class="meta-item">Avg moves: <strong>100–120</strong></div>
+          <div class="meta-item">Difficulty: <strong>Beginner</strong></div>
+        </div>
+      </div>
+
+      <div class="method-card featured reveal" style="transition-delay:0.1s">
+        <div class="method-difficulty diff-hard">Intermediate / Advanced</div>
+        <div class="method-name">CFOP (Fridrich)</div>
+        <div class="method-sub">Cross → F2L → OLL → PLL · ~55 moves · 78+ algorithms</div>
+        <ul class="method-steps">
+          <li class="method-step"><div class="step-num active">C</div><div class="step-text"><strong>Cross</strong> — 4 white edges on bottom, aligned</div></li>
+          <li class="method-step"><div class="step-num active">F</div><div class="step-text"><strong>F2L</strong> — First Two Layers, 4 corner-edge pairs</div></li>
+          <li class="method-step"><div class="step-num active">O</div><div class="step-text"><strong>OLL</strong> — Orient Last Layer, 57 algorithms</div></li>
+          <li class="method-step"><div class="step-num active">P</div><div class="step-text"><strong>PLL</strong> — Permute Last Layer, 21 algorithms</div></li>
+        </ul>
+        <div class="method-meta">
+          <div class="meta-item">Algorithms: <strong>78+</strong></div>
+          <div class="meta-item">Avg moves: <strong>55–60</strong></div>
+          <div class="meta-item">Difficulty: <strong>Advanced</strong></div>
+        </div>
+        <div class="cfop-note">
+          <div class="cfop-note-title">🏆 Used by world record holders</div>
+          <div class="cfop-note-sub">The most popular competitive speedcubing method globally.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ HOW IT WORKS ═══════════ -->
+<section id="how">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-eyebrow">How It Works</div>
+      <h2 class="section-title">Four tabs.<br><em>One system.</em></h2>
+      <p class="section-desc">Cubit's four tabs form a tight feedback loop — learn, train, solve, improve. Repeat.</p>
+    </div>
+
+    <div class="workflow-steps reveal">
+      <div class="workflow-step">
+        <div class="workflow-num">01</div>
+        <div class="workflow-step-name">Learn</div>
+        <div class="workflow-step-desc">Pick a method — Beginner's or CFOP. Walk through interactive 3D tutorials step-by-step.</div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-num">02</div>
+        <div class="workflow-step-name">Train</div>
+        <div class="workflow-step-desc">Drill specific algorithms with a live cube visualization until they're locked into muscle memory.</div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-num">03</div>
+        <div class="workflow-step-name">Solve</div>
+        <div class="workflow-step-desc">Use the timer with DNA splits to record your real solve with stage-by-stage breakdown every time.</div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-num">04</div>
+        <div class="workflow-step-name">Improve</div>
+        <div class="workflow-step-desc">Let the AI Coach analyze your DNA and tell you exactly which stage to work on next.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ CTA ═══════════ -->
+<section id="cta" class="cta-section">
+  <div class="reveal">
+    <h2 class="cta-title">
+      Start solving<br><span>smarter</span><br>today.
+    </h2>
+    <p class="cta-sub">Free to download. No subscriptions. No ads. Just you and the cube.</p>
+
+    <a href="#" class="appstore-btn">
+      <svg width="28" height="28" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+      <div class="appstore-btn-text">
+        <div class="appstore-btn-small">Download on the</div>
+        <div class="appstore-btn-large">App Store</div>
+      </div>
+    </a>
+
+    <div class="cta-note">Requires iOS · Powered by Apple Intelligence · All data stays on your device</div>
+  </div>
+</section>
+
+<!-- ═══════════ PRIVACY POLICY ═══════════ -->
+<section id="privacy" class="privacy-section">
+  <div class="privacy-inner">
+
+    <div class="privacy-header reveal">
+      <div class="section-eyebrow">Legal</div>
+      <h2 class="section-title">Privacy <em>Policy</em></h2>
+      <p class="section-desc">We built Cubit with privacy as a first principle. Here's exactly what we collect, why, and how we protect your data.</p>
+    </div>
+
+    <!-- Card 1: Overview -->
+    <div class="privacy-card reveal">
+      <div class="privacy-card-header">
+        <div class="privacy-card-icon">🔒</div>
+        <div>
+          <div class="privacy-card-title">Privacy at a Glance</div>
+          <div class="privacy-card-sub">The short version</div>
+        </div>
+      </div>
+      <div class="privacy-card-body">
+        <p>Cubit is an <strong>offline-first, privacy-first iOS app</strong>. We do not collect any personal data. We do not sell data. We do not track you. Your solve history, times, and progress live entirely on your device and are never sent anywhere without your explicit action.</p>
+        <ul>
+          <li>No account or sign-up required</li>
+          <li>No analytics or behavioral tracking</li>
+          <li>No advertising SDKs</li>
+          <li>All AI features run fully on-device via Apple Intelligence</li>
+          <li>iCloud sync is optional and controlled entirely by you in iOS Settings</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Card 2: Data We Collect -->
+    <div class="privacy-card reveal" style="transition-delay:0.05s">
+      <div class="privacy-card-header">
+        <div class="privacy-card-icon">📋</div>
+        <div>
+          <div class="privacy-card-title">What We Collect</div>
+          <div class="privacy-card-sub">Data collection practices</div>
+        </div>
+      </div>
+      <div class="privacy-card-body">
+        <p><strong>We collect no personal information whatsoever.</strong> The only data Cubit generates is stored locally on your device:</p>
+        <ul>
+          <li><strong>Solve times and session history</strong> — stored in your app's local database (SQLite/SwiftData). Never transmitted.</li>
+          <li><strong>Solve DNA splits</strong> (Cross, F2L, OLL, PLL timings) — stored locally for AI Coach analysis on-device only.</li>
+          <li><strong>Personal bests and statistics</strong> — stored locally and optionally synced via your personal iCloud account.</li>
+          <li><strong>App preferences</strong> (theme, method selection, settings) — stored in UserDefaults on-device.</li>
+        </ul>
+        <p>If you enable iCloud sync, your data travels through Apple's encrypted iCloud infrastructure under Apple's privacy policy. Cubit has no access to that data.</p>
+      </div>
+    </div>
+
+    <!-- Card 3: AI & Apple Intelligence -->
+    <div class="privacy-card reveal" style="transition-delay:0.1s">
+      <div class="privacy-card-header">
+        <div class="privacy-card-icon">🧠</div>
+        <div>
+          <div class="privacy-card-title">AI Coach & Apple Intelligence</div>
+          <div class="privacy-card-sub">On-device, private by design</div>
+        </div>
+      </div>
+      <div class="privacy-card-body">
+        <p>Cubit's AI Coach is powered by <strong>Apple Intelligence</strong>, Apple's on-device machine-learning framework. All analysis happens locally on your iPhone — your solve data never leaves your device for AI processing.</p>
+        <ul>
+          <li>No data is sent to external AI servers or third-party APIs</li>
+          <li>Coaching insights are generated entirely on your device</li>
+          <li>Apple Intelligence features require a compatible iPhone and iOS version</li>
+          <li>If your device does not support Apple Intelligence, the Coach tab will be unavailable</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Card 4: Third-Party Services -->
+    <div class="privacy-card reveal" style="transition-delay:0.15s">
+      <div class="privacy-card-header">
+        <div class="privacy-card-icon">🔗</div>
+        <div>
+          <div class="privacy-card-title">Third-Party Services</div>
+          <div class="privacy-card-sub">External integrations</div>
+        </div>
+      </div>
+      <div class="privacy-card-body">
+        <p>Cubit uses <strong>no third-party analytics, advertising, or crash-reporting SDKs</strong>. The only external service involved is Apple's own App Store infrastructure for download and purchase validation.</p>
+        <ul>
+          <li><strong>Apple App Store</strong> — for download, purchase, and optional subscription management (governed by Apple's privacy policy)</li>
+          <li><strong>Apple iCloud</strong> — optional data backup/sync if you choose to enable it in iOS Settings</li>
+          <li><strong>Apple Intelligence</strong> — on-device AI processing; no data leaves your device</li>
+        </ul>
+        <p>We do not embed Firebase, Mixpanel, Amplitude, Facebook SDK, Google Analytics, or any similar third-party tracking frameworks.</p>
+      </div>
+    </div>
+
+    <!-- Card 5: App Store & Purchases -->
+    <div class="privacy-card reveal" style="transition-delay:0.2s">
+      <div class="privacy-card-header">
+        <div class="privacy-card-icon">💳</div>
+        <div>
+          <div class="privacy-card-title">App Store & Purchases</div>
+          <div class="privacy-card-sub">Payment & billing</div>
+        </div>
+      </div>
+      <div class="privacy-card-body">
+        <p>Cubit is free to download. Any future in-app purchases or premium features are handled entirely through <strong>Apple's App Store payment infrastructure</strong>. We never receive, process, or store your payment card details.</p>
+        <ul>
+          <li>All payments are processed by Apple</li>
+          <li>We receive only a confirmation of purchase status from StoreKit, not your payment details</li>
+          <li>For billing questions, refer to your Apple ID purchase history or contact Apple Support</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Card 6: Children's Privacy -->
+    <div class="privacy-card reveal" style="transition-delay:0.25s">
+      <div class="privacy-card-header">
+        <div class="privacy-card-icon">👶</div>
+        <div>
+          <div class="privacy-card-title">Children's Privacy</div>
+          <div class="privacy-card-sub">COPPA & age groups</div>
+        </div>
+      </div>
+      <div class="privacy-card-body">
+        <p>Cubit is designed for all ages and is suitable for children. Because we collect <strong>no personal information from any user</strong>, Cubit is inherently compliant with COPPA (Children's Online Privacy Protection Act) and similar regulations worldwide.</p>
+        <ul>
+          <li>No registration or account creation is required</li>
+          <li>No personal information is collected from any user, including children</li>
+          <li>Parental controls are not required for safe use</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Card 7: Your Rights -->
+    <div class="privacy-card reveal" style="transition-delay:0.3s">
+      <div class="privacy-card-header">
+        <div class="privacy-card-icon">⚖️</div>
+        <div>
+          <div class="privacy-card-title">Your Rights & Data Deletion</div>
+          <div class="privacy-card-sub">GDPR, CCPA & global rights</div>
+        </div>
+      </div>
+      <div class="privacy-card-body">
+        <p>Since Cubit holds no personal data on our servers, there is no data to request, export, or erase from our end. All your data is on your own device, entirely under your control.</p>
+        <ul>
+          <li><strong>Delete all data</strong> — simply delete the Cubit app from your device. All local data is permanently removed.</li>
+          <li><strong>iCloud data</strong> — manage or delete via iPhone Settings → Apple ID → iCloud → Manage Storage → Cubit.</li>
+          <li><strong>GDPR / CCPA</strong> — we have no personal data to provide or delete on our end. Your device is the only data store.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Card 8: Policy Changes -->
+    <div class="privacy-card reveal" style="transition-delay:0.35s">
+      <div class="privacy-card-header">
+        <div class="privacy-card-icon">📝</div>
+        <div>
+          <div class="privacy-card-title">Changes to This Policy</div>
+          <div class="privacy-card-sub">Updates & notifications</div>
+        </div>
+      </div>
+      <div class="privacy-card-body">
+        <p>We may update this privacy policy from time to time. When we do, we will update the "Last Updated" date at the bottom of this page and, for material changes, display a notice within the app on next launch.</p>
+        <p>We encourage you to review this page periodically. Continued use of Cubit after changes constitutes acceptance of the updated policy.</p>
+      </div>
+    </div>
+
+    <!-- Privacy Highlight -->
+    <div class="privacy-highlight reveal">
+      <div class="privacy-highlight-icon">🛡️</div>
+      <div class="privacy-highlight-text">"Your data is yours — on your device, in your control, always."</div>
+      <div class="privacy-highlight-sub">Cubit Privacy Commitment</div>
+    </div>
+
+    <!-- Meta / Contact -->
+    <div class="privacy-meta reveal">
+      <div class="privacy-meta-text">Last Updated: June 2026 &nbsp;·&nbsp; Effective: June 2026 &nbsp;·&nbsp; Version 1.0</div>
+      <a href="mailto:privacy@cubitapp.com" class="privacy-contact-link">privacy@cubitapp.com</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer>
+  <div class="footer-logo">Cubit</div>
+  <div class="footer-copy">© 2026 Cubit. All rights reserved.</div>
+  <ul class="footer-links">
+    <li><a href="#privacy">Privacy</a></li>
+    <li><a href="mailto:support@cubitapp.com">Support</a></li>
+    <li><a href="#cta">App Store</a></li>
+  </ul>
+</footer>
+
+<script>
+  /* ── Theme toggle ── */
+  const html = document.documentElement;
+  const toggleBtn = document.getElementById('themeToggle');
+  const saved = localStorage.getItem('cubit-theme') || 'dark';
+  html.setAttribute('data-theme', saved);
+
+  toggleBtn.addEventListener('click', () => {
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('cubit-theme', next);
+  });
+
+  /* ── Nav scroll ── */
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 40), { passive: true });
+
+  /* ── Scroll reveal ── */
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  /* ── DNA bar re-animation on scroll ── */
+  const dnaObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.querySelectorAll('.dna-bar-fill').forEach(bar => {
+          bar.style.animation = 'none';
+          bar.offsetHeight;
+          bar.style.animation = '';
+        });
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.dna-visual').forEach(el => dnaObserver.observe(el));
+
+  /* ── Algorithm chip carousel ── */
+  const chips = document.querySelectorAll('.algo-chip');
+  let activeIdx = 0;
+  setInterval(() => {
+    chips.forEach(c => c.classList.remove('active'));
+    activeIdx = (activeIdx + 1) % chips.length;
+    chips[activeIdx].classList.add('active');
+    chips[(activeIdx + 1) % chips.length].classList.add('active');
+  }, 1800);
+
+  /* ── Scramble rotator ── */
+  const scrambles = [
+    "R U R' U' R' F R2 U' R' U' R U R' F'",
+    "F R U R' U' F' R U R' U' R' F R F'",
+    "R' U2 R U2 R' F R U R' U' R' F' R2",
+    "R' U L' U2 R U' L R' U L' U2 R U' L",
+    "U R U' L' U R' U' L",
+    "F R U' R' U' R U R' F'",
+  ];
+  let scramIdx = 0;
+  const scrambleEl = document.getElementById('scrambleDisplay');
+  setInterval(() => {
+    scramIdx = (scramIdx + 1) % scrambles.length;
+    scrambleEl.style.opacity = '0';
+    setTimeout(() => {
+      scrambleEl.textContent = scrambles[scramIdx];
+      scrambleEl.style.opacity = '1';
+    }, 300);
+  }, 3000);
+</script>
+
+</body>
+</html>
